@@ -6,12 +6,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _WIN32
+
 #include <unistd.h>
 #include <functional>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#else
+#include <udpbox-win.h>
+#endif
 
 #include <string>
 #include <thread>
@@ -75,7 +80,8 @@ struct Server
 private:
     void synchronousListenerThread()
     {
-        int socketFileDescriptor;
+#ifndef _WIN32
+      int socketFileDescriptor;
         uint8_t buffer[MAX_UDP_PACKET_SIZE];
         sockaddr_in serverAddress;
         sockaddr_in clientAddress;
@@ -118,6 +124,26 @@ private:
                 onDatagramCallback(std::move(datagram));
             }
         }
+#else
+            try
+    {
+        WSASession Session;
+        UDPSocket Socket;
+        char buffer[MAX_UDP_PACKET_SIZE];
+int datagramSize;
+        Socket.Bind(port);
+        while (isRunning)
+        {
+            sockaddr_in clientAddress = Socket.RecvFrom(buffer, sizeof(buffer), &datagramSize);
+                Datagram datagram(reinterpret_cast<uint8_t *>(buffer), datagramSize, clientAddress);
+                onDatagramCallback(std::move(datagram));
+        }
+    }
+    catch (std::system_error& e)
+    {
+        std::cout << e.what();
+    }
+#endif
     }
 
     int port;

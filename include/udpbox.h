@@ -21,6 +21,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <functional>
 
 #define MAX_UDP_PACKET_SIZE 65535
 
